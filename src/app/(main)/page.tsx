@@ -246,7 +246,7 @@ export default function HomePage() {
                 <div className="flex items-center mb-6">
                   <div className="mr-4">
                     <img
-                      src={podcasts.coverUrl || "/img/default.jpg"}
+                      src={podcasts[0]?.coverUrl || "/img/default.jpg"}
                       alt="Podcast Cover"
                       className="w-24 h-24 object-cover rounded-lg shadow-lg"
                     />
