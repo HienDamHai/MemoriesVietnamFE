@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ROUTES from "../../../../router/routes";
+import api from "@/lib/api"; // ✅ Import Axios client
 
 export default function AuthPage() {
   const router = useRouter();
@@ -21,9 +22,11 @@ export default function AuthPage() {
     if (!email.match(/^\S+@\S+\.\S+$/)) newErrors.email = "Email không hợp lệ";
     if (password.length < 6) newErrors.password = "Mật khẩu ít nhất 6 ký tự";
     if (mode === "register") {
-      if (password !== confirmPassword) newErrors.confirmPassword = "Mật khẩu không khớp";
+      if (password !== confirmPassword)
+        newErrors.confirmPassword = "Mật khẩu không khớp";
       if (!name) newErrors.name = "Họ và tên không được để trống";
-      if (phone && !phone.match(/^\d{9,12}$/)) newErrors.phone = "Số điện thoại không hợp lệ";
+      if (phone && !phone.match(/^\d{9,12}$/))
+        newErrors.phone = "Số điện thoại không hợp lệ";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -32,30 +35,28 @@ export default function AuthPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-  
     setLoading(true);
+
     try {
       if (mode === "login") {
-        const res = await fetch("https://localhost:7003/api/Auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-        const data = await res.json();
-  
+        // ✅ Dùng Axios thay vì fetch
+        const res = await api.post("/Auth/login", { email, password });
+        const data = res.data;
+
         if (data.success) {
           localStorage.setItem("token", data.token);
           window.dispatchEvent(new Event("storage"));
-  
-          // 🔍 Kiểm tra Role
+
+          // 🔍 Lấy role từ response hoặc JWT
           let role = data.user?.role;
           if (!role && data.token) {
-            // Nếu backend không trả user.role, ta giải mã JWT
             const payload = JSON.parse(atob(data.token.split(".")[1]));
-            role = payload["role"] || payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+            role =
+              payload["role"] ||
+              payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
           }
-  
-          // 🚀 Điều hướng dựa trên Role
+
+          // 🚀 Điều hướng dựa theo role
           if (role === "Admin") {
             router.push("/admin/dashboard");
           } else {
@@ -65,12 +66,15 @@ export default function AuthPage() {
           alert(data.message || "Đăng nhập thất bại");
         }
       } else {
-        const res = await fetch("https://localhost:7003/api/Auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, name, phone, address }),
+        // ✅ Đăng ký
+        const res = await api.post("/Auth/register", {
+          email,
+          password,
+          name,
+          phone,
+          address,
         });
-        const data = await res.json();
+        const data = res.data;
         if (data.success) {
           alert("Đăng ký thành công! Vui lòng đăng nhập.");
           setMode("login");
@@ -85,7 +89,7 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
-  
+
   const handleGoogleLogin = async () => {
     const googleUser = {
       sub: "1234567890",
@@ -95,6 +99,7 @@ export default function AuthPage() {
       refresh_token: "refresh_token_from_google",
       expires_in: 3600,
     };
+
     const payload = {
       provider: "google",
       providerUserId: googleUser.sub,
@@ -104,13 +109,10 @@ export default function AuthPage() {
       refreshToken: googleUser.refresh_token,
       expireAt: new Date(Date.now() + googleUser.expires_in * 1000).toISOString(),
     };
+
     try {
-      const res = await fetch("https://localhost:7003/api/Auth/oauth-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
+      const res = await api.post("/Auth/oauth-login", payload);
+      const data = res.data;
       if (data.success) {
         localStorage.setItem("token", data.token);
         router.push(ROUTES.HOME);
@@ -125,6 +127,7 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-amber-50 px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
+        {/* Chuyển đổi tab */}
         <div className="flex justify-center mb-6">
           <button
             onClick={() => setMode("login")}
@@ -148,6 +151,7 @@ export default function AuthPage() {
           </button>
         </div>
 
+        {/* Đăng nhập/đăng ký Google */}
         <button
           onClick={handleGoogleLogin}
           className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl mb-6 transition-all"
@@ -157,14 +161,27 @@ export default function AuthPage() {
             viewBox="0 0 533.5 544.3"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path fill="#4285F4" d="M533.5 278.4c0-17.4-1.4-34.2-4.1-50.4H272v95.5h146.9c-6.3 33.7-25.2 62.3-53.7 81.5v67.6h86.6c50.6-46.6 79.7-115.3 79.7-194.2z"/>
-            <path fill="#34A853" d="M272 544.3c72.6 0 133.6-24 178.1-65.1l-86.6-67.6c-24.1 16.2-54.9 25.7-91.5 25.7-70.3 0-130-47.5-151.2-111.3H32.6v69.9C77.1 497 169.4 544.3 272 544.3z"/>
-            <path fill="#FBBC05" d="M120.8 325.3c-10.4-31-10.4-64.3 0-95.3V159.9H32.6c-36.1 70.7-36.1 154.5 0 225.2l88.2-59.8z"/>
-            <path fill="#EA4335" d="M272 107.1c37.5-.6 71.1 13.4 97.6 39.4l73.1-73.1C406.1 24.2 345.1 0 272 0 169.4 0 77.1 47.3 32.6 122.9l88.2 65.2C142 154.6 201.7 107.1 272 107.1z"/>
+            <path
+              fill="#4285F4"
+              d="M533.5 278.4c0-17.4-1.4-34.2-4.1-50.4H272v95.5h146.9c-6.3 33.7-25.2 62.3-53.7 81.5v67.6h86.6c50.6-46.6 79.7-115.3 79.7-194.2z"
+            />
+            <path
+              fill="#34A853"
+              d="M272 544.3c72.6 0 133.6-24 178.1-65.1l-86.6-67.6c-24.1 16.2-54.9 25.7-91.5 25.7-70.3 0-130-47.5-151.2-111.3H32.6v69.9C77.1 497 169.4 544.3 272 544.3z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M120.8 325.3c-10.4-31-10.4-64.3 0-95.3V159.9H32.6c-36.1 70.7-36.1 154.5 0 225.2l88.2-59.8z"
+            />
+            <path
+              fill="#EA4335"
+              d="M272 107.1c37.5-.6 71.1 13.4 97.6 39.4l73.1-73.1C406.1 24.2 345.1 0 272 0 169.4 0 77.1 47.3 32.6 122.9l88.2 65.2C142 154.6 201.7 107.1 272 107.1z"
+            />
           </svg>
           {mode === "login" ? "Đăng nhập" : "Đăng ký"} bằng Google
         </button>
 
+        {/* Form đăng nhập/đăng ký */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "register" && (
             <>
@@ -174,10 +191,14 @@ export default function AuthPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className={`w-full border px-4 py-3 rounded-xl focus:outline-none transition ${
-                  errors.name ? "border-red-500 focus:ring-red-300" : "border-gray-300 focus:ring-amber-300"
+                  errors.name
+                    ? "border-red-500 focus:ring-red-300"
+                    : "border-gray-300 focus:ring-amber-300"
                 }`}
               />
-              {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+              {errors.name && (
+                <p className="text-red-500 text-sm">{errors.name}</p>
+              )}
 
               <input
                 type="text"
@@ -185,10 +206,14 @@ export default function AuthPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className={`w-full border px-4 py-3 rounded-xl focus:outline-none transition ${
-                  errors.phone ? "border-red-500 focus:ring-red-300" : "border-gray-300 focus:ring-amber-300"
+                  errors.phone
+                    ? "border-red-500 focus:ring-red-300"
+                    : "border-gray-300 focus:ring-amber-300"
                 }`}
               />
-              {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
+              {errors.phone && (
+                <p className="text-red-500 text-sm">{errors.phone}</p>
+              )}
 
               <input
                 type="text"
@@ -206,10 +231,14 @@ export default function AuthPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={`w-full border px-4 py-3 rounded-xl focus:outline-none transition ${
-              errors.email ? "border-red-500 focus:ring-red-300" : "border-gray-300 focus:ring-amber-300"
+              errors.email
+                ? "border-red-500 focus:ring-red-300"
+                : "border-gray-300 focus:ring-amber-300"
             }`}
           />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+          {errors.email && (
+            <p className="text-red-500 text-sm">{errors.email}</p>
+          )}
 
           <input
             type="password"
@@ -217,10 +246,14 @@ export default function AuthPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={`w-full border px-4 py-3 rounded-xl focus:outline-none transition ${
-              errors.password ? "border-red-500 focus:ring-red-300" : "border-gray-300 focus:ring-amber-300"
+              errors.password
+                ? "border-red-500 focus:ring-red-300"
+                : "border-gray-300 focus:ring-amber-300"
             }`}
           />
-          {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
+          {errors.password && (
+            <p className="text-red-500 text-sm">{errors.password}</p>
+          )}
 
           {mode === "register" && (
             <>
@@ -230,10 +263,16 @@ export default function AuthPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className={`w-full border px-4 py-3 rounded-xl focus:outline-none transition ${
-                  errors.confirmPassword ? "border-red-500 focus:ring-red-300" : "border-gray-300 focus:ring-amber-300"
+                  errors.confirmPassword
+                    ? "border-red-500 focus:ring-red-300"
+                    : "border-gray-300 focus:ring-amber-300"
                 }`}
               />
-              {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-sm">
+                  {errors.confirmPassword}
+                </p>
+              )}
             </>
           )}
 
@@ -242,7 +281,11 @@ export default function AuthPage() {
             disabled={loading}
             className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl font-medium transition-all"
           >
-            {loading ? "Đang xử lý..." : mode === "login" ? "Đăng nhập" : "Đăng ký"}
+            {loading
+              ? "Đang xử lý..."
+              : mode === "login"
+              ? "Đăng nhập"
+              : "Đăng ký"}
           </button>
         </form>
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import api from "@/lib/api"; // ✅ import axios instance
 
 type CartItem = {
   productId: string;
@@ -60,23 +61,18 @@ export default function CheckoutPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("https://localhost:7003/api/Order", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(orderData),
-      });
+      // ✅ Gọi API bằng axios
+      const res = await api.post("/Order", orderData);
 
-      if (!res.ok) throw new Error("Không thể tạo đơn hàng");
+      if (res.status !== 200 && res.status !== 201)
+        throw new Error("Không thể tạo đơn hàng");
 
       localStorage.removeItem("cart");
 
       alert("✅ Đặt hàng thành công!");
       router.push("/user/order");
     } catch (err) {
-      console.error(err);
+      console.error("❌ Lỗi khi tạo đơn hàng:", err);
       alert("❌ Lỗi khi tạo đơn hàng. Vui lòng thử lại.");
     } finally {
       setLoading(false);

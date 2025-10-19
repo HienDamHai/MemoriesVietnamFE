@@ -2,16 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import axios from "axios";
-
-const API_BASE = "https://localhost:7003/api";
+import api from "@/lib/api"; // ✅ Dùng axios wrapper từ lib/api.ts
 
 export default function ArticleManager() {
   const [eras, setEras] = useState<any[]>([]);
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageUploading, setImageUploading] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null); // ✅ điều khiển xem chi tiết
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     id: "",
@@ -31,8 +29,8 @@ export default function ArticleManager() {
     const loadData = async () => {
       try {
         const [eraRes, artRes] = await Promise.all([
-          axios.get(`${API_BASE}/Era`),
-          axios.get(`${API_BASE}/Article/published`),
+          api.get("/Era"),
+          api.get("/Article/published"),
         ]);
         setEras(eraRes.data);
         setArticles(Array.isArray(artRes.data) ? artRes.data : [artRes.data]);
@@ -51,22 +49,33 @@ export default function ArticleManager() {
     if (!file) return;
     setImageUploading(true);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "o2kexzas"); // preset của bạn
-    formData.append("cloud_name", "dpghembhy"); // cloud_name của bạn
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "o2kexzas");
+      formData.append("cloud_name", "dpghembhy");
 
-    const res = await fetch(
-      "https://api.cloudinary.com/v1_1/dpghembhy/image/upload",
-      {
-        method: "POST",
-        body: formData,
+      const res = await fetch(
+        "https://api.cloudinary.com/v1_1/dpghembhy/image/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      const data = await res.json();
+
+      if (!data.secure_url) {
+        alert("Lỗi tải ảnh lên Cloudinary!");
+        return;
       }
-    );
-    const data = await res.json();
 
-    setForm((f) => ({ ...f, coverUrl: data.secure_url }));
-    setImageUploading(false);
+      setForm((f) => ({ ...f, coverUrl: data.secure_url }));
+    } catch (err) {
+      console.error("❌ Lỗi upload ảnh:", err);
+      alert("Không thể tải ảnh lên!");
+    } finally {
+      setImageUploading(false);
+    }
   };
 
   // ✅ Tạo hoặc cập nhật bài viết
@@ -85,12 +94,12 @@ export default function ArticleManager() {
       };
 
       if (form.id) {
-        await axios.put(`${API_BASE}/Article/${form.id}`, payload);
+        await api.put(`/Article/${form.id}`, payload);
       } else {
-        await axios.post(`${API_BASE}/Article`, payload);
+        await api.post("/Article", payload);
       }
 
-      const artRes = await axios.get(`${API_BASE}/Article/published`);
+      const artRes = await api.get("/Article/published");
       setArticles(Array.isArray(artRes.data) ? artRes.data : [artRes.data]);
 
       setForm({
@@ -105,6 +114,8 @@ export default function ArticleManager() {
         sources: "",
         publishedAt: new Date().toISOString(),
       });
+
+      setExpandedId(null);
     } catch (err) {
       console.error("❌ Lỗi khi lưu bài viết:", err);
       alert("Lỗi khi lưu bài viết!");
@@ -114,8 +125,14 @@ export default function ArticleManager() {
   // ✅ Xóa bài viết
   const handleDeleteArticle = async (id: string) => {
     if (!confirm("Bạn có chắc muốn xóa bài viết này?")) return;
-    await axios.delete(`${API_BASE}/Article/${id}`);
-    setArticles(articles.filter((a) => a.id !== id));
+    try {
+      await api.delete(`/Article/${id}`);
+      setArticles(articles.filter((a) => a.id !== id));
+      setExpandedId(null);
+    } catch (err) {
+      console.error("❌ Lỗi khi xóa:", err);
+      alert("Không thể xóa bài viết!");
+    }
   };
 
   if (loading)
@@ -206,7 +223,8 @@ export default function ArticleManager() {
 
           <button
             onClick={handleSaveArticle}
-            className="col-span-2 bg-amber-700 text-white font-semibold py-2 rounded"
+            disabled={imageUploading}
+            className="col-span-2 bg-amber-700 text-white font-semibold py-2 rounded disabled:opacity-50"
           >
             {form.id ? "Cập nhật bài viết" : "Thêm bài viết"}
           </button>
@@ -289,9 +307,16 @@ export default function ArticleManager() {
                     {a.sources && (
                       <div className="mt-2 text-sm text-amber-200 break-words">
                         <strong>Nguồn:</strong>{" "}
-                        {Array.isArray(JSON.parse(a.sources))
-                          ? JSON.parse(a.sources).join(", ")
-                          : a.sources}
+                        {(() => {
+                          try {
+                            const src = JSON.parse(a.sources);
+                            return Array.isArray(src)
+                              ? src.join(", ")
+                              : a.sources;
+                          } catch {
+                            return a.sources;
+                          }
+                        })()}
                       </div>
                     )}
                   </div>

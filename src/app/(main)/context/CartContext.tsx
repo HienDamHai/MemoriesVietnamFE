@@ -1,5 +1,7 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect } from "react";
+
+import React, { createContext, useContext, useState } from "react";
+import api from "@/lib/api"; // ✅ Dùng axios instance đã cấu hình
 
 interface CartItem {
   productId: string;
@@ -48,7 +50,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // ✅ Mở / đóng giỏ hàng
   const toggleCart = () => setIsOpen((prev) => !prev);
 
-  // ✅ Gửi đơn hàng đến API (backend sẽ tự lấy userId từ token)
+  // ✅ Gửi đơn hàng bằng axios
   const placeOrder = async () => {
     const token = localStorage.getItem("token");
 
@@ -74,26 +76,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     console.log("📦 Payload gửi lên API:", payload);
 
     try {
-      const res = await fetch("https://localhost:7003/api/Order", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      // ⚙️ Dùng axios instance
+      const res = await api.post("/Order", payload);
 
-      const responseText = await res.text();
-      console.log("📩 Phản hồi từ API:", responseText);
-
-      if (!res.ok) throw new Error("Lỗi tạo đơn hàng");
+      console.log("📩 Phản hồi từ API:", res.data);
 
       alert("✅ Đặt hàng thành công!");
       setCart([]);
       setIsOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error("❌ Lỗi khi đặt hàng:", err);
-      alert("Đặt hàng thất bại!");
+      alert(
+        `Đặt hàng thất bại! ${
+          err.response?.data?.message || "Vui lòng thử lại sau."
+        }`
+      );
     }
   };
 

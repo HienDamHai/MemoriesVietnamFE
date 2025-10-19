@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import api from "@/lib/api"; // ✅ import Axios client đã cấu hình
 
 type OrderItem = {
   id: number;
@@ -54,40 +55,33 @@ export default function UserOrders() {
       return;
     }
 
-    fetch("https://localhost:7003/api/Order/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then(setOrders)
-      .catch(console.error)
+    // ✅ Dùng Axios thay vì fetch
+    api
+      .get("/Order/me")
+      .then((res) => {
+        setOrders(res.data);
+      })
+      .catch((err) => {
+        console.error("Lỗi khi tải đơn hàng:", err);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   const handlePayNow = async (orderId: string) => {
     try {
       setPaying(orderId);
-      const token = localStorage.getItem("token");
-      const res = await fetch(
-        `https://localhost:7003/api/Payment/create?orderId=${orderId}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await api.post(`/Payment/create?orderId=${orderId}`);
 
-      if (!res.ok) throw new Error("Không thể tạo liên kết thanh toán");
-      const data = await res.json();
+      if (!res.data) throw new Error("Không nhận được phản hồi từ server");
+      const data = res.data;
 
-      // Redirect sang cổng thanh toán (VD: VNPAY, Momo)
       if (data.paymentUrl) {
-        window.location.href = data.paymentUrl;
+        window.location.href = data.paymentUrl; // ✅ redirect sang cổng thanh toán
       } else {
         alert("Không tìm thấy liên kết thanh toán.");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Lỗi khi khởi tạo thanh toán:", err);
       alert("Có lỗi khi khởi tạo thanh toán.");
     } finally {
       setPaying(null);
@@ -97,18 +91,14 @@ export default function UserOrders() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
-        <p className="text-lg text-gray-500 animate-pulse">
-          Đang tải đơn hàng...
-        </p>
+        <p className="text-lg text-gray-500 animate-pulse">Đang tải đơn hàng...</p>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto py-10 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-amber-900">
-        📜 Đơn hàng của tôi
-      </h1>
+      <h1 className="text-3xl font-bold mb-8 text-amber-900">📜 Đơn hàng của tôi</h1>
 
       {orders.length === 0 ? (
         <div className="text-center bg-amber-50 border border-amber-200 p-8 rounded-lg text-amber-900 shadow-sm">
@@ -163,19 +153,6 @@ export default function UserOrders() {
               </ul>
 
               <div className="border-t border-gray-100 mt-3 pt-3 flex justify-between items-center">
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
                 {order.status === 0 && (
                   <button
                     onClick={() => handlePayNow(order.id)}

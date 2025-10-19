@@ -1,5 +1,5 @@
 "use client";
-
+import api from "@/lib/api";
 import { useEffect, useState } from "react";
 
 type User = {
@@ -60,9 +60,9 @@ export default function ManageUsers() {
 
   // 🔹 Lấy tất cả user
   useEffect(() => {
-    fetch("https://localhost:7003/api/Users")
-      .then((res) => res.json())
-      .then(setUsers)
+    api
+      .get("/Users")
+      .then((res) => setUsers(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -72,15 +72,11 @@ export default function ManageUsers() {
     if (!confirm("Bạn có chắc muốn xoá người dùng này không?")) return;
 
     try {
-      const res = await fetch(`https://localhost:7003/api/Users/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Xoá thất bại");
+      await api.delete(`/Users/${id}`);
       alert("Đã xoá người dùng.");
       setUsers((prev) => prev.filter((u) => u.id !== id));
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
       alert("Có lỗi khi xoá người dùng.");
     }
   };
@@ -90,11 +86,10 @@ export default function ManageUsers() {
     setSelectedUser(user);
     setLoadingOrders(true);
     try {
-      const res = await fetch(`https://localhost:7003/api/Order/user/${user.id}`);
-      const data = await res.json();
-      setOrders(data);
-    } catch (error) {
-      console.error(error);
+      const res = await api.get(`/Order/user/${user.id}`);
+      setOrders(res.data);
+    } catch (err) {
+      console.error(err);
       alert("Không thể tải danh sách đơn hàng.");
     } finally {
       setLoadingOrders(false);

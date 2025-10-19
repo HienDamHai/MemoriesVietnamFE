@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
-
-const API_BASE = "https://localhost:7003/api";
+import api from "@/lib/api"; // ✅ dùng file cấu hình axios chuẩn
 
 type Era = {
   id?: string;
@@ -28,7 +26,7 @@ export default function EraManager() {
   useEffect(() => {
     const fetchEras = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/Era/active`);
+        const res = await api.get("/Era/active");
         setEras(res.data);
       } catch (err) {
         console.error("❌ Lỗi khi tải thời kỳ:", err);
@@ -45,22 +43,23 @@ export default function EraManager() {
       if (!form.name.trim()) return alert("Vui lòng nhập tên thời kỳ");
 
       const payload = {
-        name: form.name,
+        name: form.name.trim(),
         yearStart: +form.yearStart,
         yearEnd: +form.yearEnd,
-        description: form.description,
+        description: form.description.trim(),
       };
 
       if (editingId) {
-        await axios.put(`${API_BASE}/Era/${editingId}`, payload);
+        await api.put(`/Era/${editingId}`, payload);
       } else {
-        await axios.post(`${API_BASE}/Era`, payload);
+        await api.post("/Era", payload);
       }
 
-      const res = await axios.get(`${API_BASE}/Era/active`);
+      // Sau khi lưu, load lại danh sách
+      const res = await api.get("/Era/active");
       setEras(res.data);
 
-      // reset form
+      // Reset form
       setForm({ name: "", yearStart: 0, yearEnd: 0, description: "" });
       setEditingId(null);
     } catch (err) {
@@ -73,7 +72,7 @@ export default function EraManager() {
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc chắn muốn xóa thời kỳ này?")) return;
     try {
-      await axios.delete(`${API_BASE}/Era/${id}`);
+      await api.delete(`/Era/${id}`);
       setEras(eras.filter((e) => e.id !== id));
     } catch (err) {
       console.error("❌ Lỗi khi xóa:", err);

@@ -4,9 +4,25 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
-import { Article } from "@/types/entities";
 import { ArrowLeft } from "lucide-react";
 import ROUTES from "@/router/routes";
+
+interface Article {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  coverUrl: string;
+  yearStart: number;
+  yearEnd: number;
+  eraId: string;
+  publishedAt?: string;
+  sources?: string | string[];
+  era?: {
+    id: string;
+    name: string;
+  };
+}
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -35,7 +51,7 @@ export default function ArticleDetailPage() {
   if (loading) return <div className="text-center py-20">Đang tải bài viết...</div>;
   if (!article) return <div className="text-center py-20">Không tìm thấy bài viết</div>;
 
-  // ✅ Xử lý an toàn mảng nguồn tham khảo
+  // ✅ Xử lý an toàn danh sách nguồn
   let sources: string[] = [];
   try {
     if (article.sources) {

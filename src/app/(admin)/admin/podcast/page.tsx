@@ -34,17 +34,21 @@ export default function PodcastManager() {
     duration: 0,
     episodeNumber: 1,
   });
+  const [uploading, setUploading] = useState(false);
 
+  // === FETCH DATA ===
   useEffect(() => {
     fetchPodcasts();
   }, []);
 
   async function fetchPodcasts() {
     try {
+      setLoading(true);
       const res = await api.get("/Podcast/with-episodes");
       setPodcasts(res.data);
     } catch (err) {
       console.error(err);
+      alert("Lỗi khi tải danh sách podcast!");
     } finally {
       setLoading(false);
     }
@@ -54,71 +58,117 @@ export default function PodcastManager() {
   async function uploadImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const data = new FormData();
-    data.append("file", file);
-    data.append("upload_preset", "o2kexzas");
-    data.append("cloud_name", "dpghembhy");
-    data.append("resource_type", "image");
-  
-    const res = await fetch("https://api.cloudinary.com/v1_1/dpghembhy/image/upload", {
-      method: "POST",
-      body: data,
-    });
-    const result = await res.json();
-    setForm({ ...form, coverUrl: result.secure_url });
+
+    setUploading(true);
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      data.append("upload_preset", "o2kexzas");
+      data.append("cloud_name", "dpghembhy");
+
+      const res = await fetch("https://api.cloudinary.com/v1_1/dpghembhy/image/upload", {
+        method: "POST",
+        body: data,
+      });
+      const result = await res.json();
+
+      setForm((prev) => ({ ...prev, coverUrl: result.secure_url }));
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi upload ảnh!");
+    } finally {
+      setUploading(false);
+    }
   }
-  
 
   // === UPLOAD AUDIO TO CLOUDINARY ===
   async function uploadAudio(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const data = new FormData();
-    data.append("file", file);
-    data.append("upload_preset", "o2kexzas");
-    data.append("cloud_name", "dpghembhy");
-    data.append("resource_type", "video");
-  
-    const res = await fetch("https://api.cloudinary.com/v1_1/dpghembhy/video/upload", {
-      method: "POST",
-      body: data,
-    });
-    const result = await res.json();
-    setNewEpisode({ ...newEpisode, audioUrl: result.secure_url });
-  }
-  
 
-  async function createPodcast() {
-    if (!form.title) return alert("Vui lòng nhập tiêu đề");
-    await api.post("/Podcast", form);
-    setShowForm(false);
-    setForm({ title: "", description: "", coverUrl: "" });
-    fetchPodcasts();
-  }
+    setUploading(true);
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      data.append("upload_preset", "o2kexzas");
+      data.append("cloud_name", "dpghembhy");
+      data.append("resource_type", "video");
 
-  async function deletePodcast(id: string) {
-    if (confirm("Xóa podcast này?")) {
-      await api.delete(`/Podcast/${id}`);
-      fetchPodcasts();
+      const res = await fetch("https://api.cloudinary.com/v1_1/dpghembhy/video/upload", {
+        method: "POST",
+        body: data,
+      });
+      const result = await res.json();
+
+      setNewEpisode((prev) => ({ ...prev, audioUrl: result.secure_url }));
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi upload audio!");
+    } finally {
+      setUploading(false);
     }
   }
 
-  async function addEpisode() {
-    if (!selectedPodcast) return;
-    const payload = {
-      podcastId: selectedPodcast.id,
-      title: newEpisode.title,
-      audioUrl: newEpisode.audioUrl,
-      duration: newEpisode.duration,
-      episodeNumber: newEpisode.episodeNumber,
-      articleId: "art4",
-    };
-    await api.post("/PodcastEpisode", payload);
-    setNewEpisode({ title: "", audioUrl: "", duration: 0, episodeNumber: 1 });
-    fetchPodcasts();
+  // === CREATE PODCAST ===
+  async function createPodcast() {
+    if (!form.title) return alert("Vui lòng nhập tiêu đề");
+    try {
+      await api.post("/Podcast", form);
+      alert("✅ Đã tạo podcast thành công!");
+      setShowForm(false);
+      setForm({ title: "", description: "", coverUrl: "" });
+      fetchPodcasts();
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi tạo podcast!");
+    }
   }
 
-  if (loading) return <p>Đang tải...</p>;
+  // === DELETE PODCAST ===
+  async function deletePodcast(id: string) {
+    if (!confirm("Bạn có chắc muốn xoá podcast này không?")) return;
+    try {
+      await api.delete(`/Podcast/${id}`);
+      alert("🗑️ Đã xoá podcast!");
+      fetchPodcasts();
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi xoá podcast!");
+    }
+  }
+
+  // === ADD EPISODE ===
+  async function addEpisode() {
+    if (!selectedPodcast) return alert("Chưa chọn podcast!");
+    if (!newEpisode.title || !newEpisode.audioUrl)
+      return alert("Cần tiêu đề và audio!");
+
+    try {
+      const payload = {
+        podcastId: selectedPodcast.id,
+        title: newEpisode.title,
+        audioUrl: newEpisode.audioUrl,
+        duration: newEpisode.duration || 0,
+        episodeNumber: newEpisode.episodeNumber,
+        articleId: "art4", // TODO: có thể thay bằng id thực từ bài viết
+      };
+
+      await api.post("/PodcastEpisode", payload);
+      alert("✅ Đã thêm tập mới!");
+      setNewEpisode({ title: "", audioUrl: "", duration: 0, episodeNumber: 1 });
+      fetchPodcasts();
+
+      // cập nhật ngay dữ liệu cho modal hiện tại
+      const updated = await api.get(`/Podcast/${selectedPodcast.id}`);
+      setSelectedPodcast(updated.data);
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi thêm tập!");
+    }
+  }
+
+  if (loading)
+    return <div className="text-center py-10 text-gray-500 animate-pulse">Đang tải podcast...</div>;
 
   return (
     <div className="p-8">
@@ -131,6 +181,7 @@ export default function PodcastManager() {
         ➕ Thêm Podcast
       </button>
 
+      {/* === FORM TẠO PODCAST === */}
       {showForm && (
         <div className="bg-amber-100 p-4 rounded mb-4">
           <input
@@ -146,6 +197,7 @@ export default function PodcastManager() {
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
           <input type="file" accept="image/*" onChange={uploadImage} className="mb-2" />
+          {uploading && <p className="text-sm text-gray-500 mb-2">Đang upload...</p>}
           {form.coverUrl && (
             <img src={form.coverUrl} alt="cover" className="h-32 rounded mb-2" />
           )}
@@ -155,7 +207,7 @@ export default function PodcastManager() {
         </div>
       )}
 
-      {/* === Danh sách Podcast === */}
+      {/* === DANH SÁCH PODCAST === */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {podcasts.map((p) => (
           <div key={p.id} className="border p-4 rounded bg-white shadow">
@@ -168,7 +220,7 @@ export default function PodcastManager() {
               <div>
                 <h3 className="font-semibold">{p.title}</h3>
                 <p className="text-sm text-gray-600">{p.description}</p>
-                <p className="text-xs text-gray-500">{p.episodes.length} tập</p>
+                <p className="text-xs text-gray-500">{p.episodes?.length || 0} tập</p>
               </div>
             </div>
 
@@ -190,13 +242,13 @@ export default function PodcastManager() {
         ))}
       </div>
 
-      {/* === Quản lý tập Podcast === */}
+      {/* === MODAL QUẢN LÝ TẬP === */}
       {selectedPodcast && (
-        <div className="fixed top-0 left-0 w-full h-full bg-black/60 flex justify-center items-start pt-10 overflow-auto z-50">
-          <div className="bg-white rounded p-6 w-[600px] relative">
+        <div className="fixed inset-0 bg-black/60 flex justify-center items-start pt-10 overflow-auto z-50">
+          <div className="bg-white rounded p-6 w-[600px] relative shadow-lg">
             <button
               onClick={() => setSelectedPodcast(null)}
-              className="absolute top-2 right-2 text-gray-600"
+              className="absolute top-2 right-2 text-gray-600 hover:text-black"
             >
               ✖
             </button>
@@ -205,7 +257,7 @@ export default function PodcastManager() {
             </h2>
 
             {/* Danh sách tập */}
-            {selectedPodcast.episodes.map((e) => (
+            {selectedPodcast.episodes?.map((e) => (
               <div key={e.id} className="border p-2 rounded mb-2">
                 <p>
                   <strong>{e.episodeNumber}. {e.title}</strong>
@@ -232,12 +284,8 @@ export default function PodcastManager() {
                   setNewEpisode({ ...newEpisode, episodeNumber: parseInt(e.target.value) })
                 }
               />
-              <input
-                type="file"
-                accept="audio/*"
-                onChange={uploadAudio}
-                className="mb-2"
-              />
+              <input type="file" accept="audio/*" onChange={uploadAudio} className="mb-2" />
+              {uploading && <p className="text-sm text-gray-500 mb-2">Đang upload...</p>}
               {newEpisode.audioUrl && (
                 <audio controls src={newEpisode.audioUrl} className="w-full mb-2" />
               )}

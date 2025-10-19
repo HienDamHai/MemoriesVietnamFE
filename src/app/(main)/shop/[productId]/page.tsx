@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useCart } from "../../context/CartContext";
+import api from "@/lib/api"; // 👈 Dùng axios instance đã cấu hình sẵn
+
 interface Product {
   id: string;
   name: string;
@@ -20,20 +22,19 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState(false);
-  const [quantity, setQuantity] = useState(1); // ✅ số lượng chọn
-  const { addToCart } = useCart(); // ✅ dùng context
+  const [quantity, setQuantity] = useState(1);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     if (!productId) return;
 
     const loadProduct = async () => {
       try {
-        const res = await fetch(`https://localhost:7003/api/Product/${productId}`);
-        if (!res.ok) throw new Error("Không thể tải sản phẩm");
-        const data = await res.json();
-        setProduct(data);
+        // ✅ Gọi API bằng axios (có baseURL từ lib/api.ts)
+        const res = await api.get<Product>(`/Product/${productId}`);
+        setProduct(res.data);
       } catch (error) {
-        console.error(error);
+        console.error("❌ Lỗi khi tải sản phẩm:", error);
       } finally {
         setLoading(false);
       }
@@ -42,11 +43,11 @@ export default function ProductDetailPage() {
     loadProduct();
   }, [productId]);
 
-
   /** ✅ Xử lý thêm sản phẩm vào giỏ */
   const handleAddToCart = () => {
     if (!product) return;
     const firstImage = safeParseImages(product.images)[0];
+
     addToCart({
       productId: product.id,
       name: product.name,
@@ -54,6 +55,10 @@ export default function ProductDetailPage() {
       qty: quantity,
       image: firstImage,
     });
+
+    setAdded(true);
+    // Tự động reset trạng thái “đã thêm” sau 2s
+    setTimeout(() => setAdded(false), 2000);
   };
 
   if (loading)
@@ -92,7 +97,9 @@ export default function ProductDetailPage() {
         {/* Thông tin sản phẩm */}
         <div>
           <h1 className="text-3xl font-bold text-amber-900">{product.name}</h1>
-          <p className="mt-3 text-gray-700 leading-relaxed">{product.description}</p>
+          <p className="mt-3 text-gray-700 leading-relaxed">
+            {product.description}
+          </p>
 
           <p className="mt-6 text-3xl font-semibold text-amber-800">
             {product.price.toLocaleString()}₫
@@ -119,7 +126,9 @@ export default function ProductDetailPage() {
               max={product.stock}
               value={quantity}
               onChange={(e) =>
-                setQuantity(Math.max(1, Math.min(product.stock, parseInt(e.target.value) || 1)))
+                setQuantity(
+                  Math.max(1, Math.min(product.stock, parseInt(e.target.value) || 1))
+                )
               }
               className="w-20 border border-gray-300 rounded-lg px-2 py-1 text-center"
             />
@@ -143,7 +152,7 @@ export default function ProductDetailPage() {
   );
 }
 
-/** An toàn khi parse JSON ảnh */
+/** ✅ An toàn khi parse JSON ảnh */
 function safeParseImages(images: string): string[] {
   try {
     const parsed = JSON.parse(images);

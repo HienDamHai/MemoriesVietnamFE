@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import api from "@/lib/api";
 
 interface Era {
   id: string;
@@ -29,20 +30,18 @@ const ArticleListPage = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchArticles = async () => {
-    try {
-      const response = await fetch("https://localhost:7003/api/Article/published");
-      if (!response.ok) throw new Error("Không thể tải danh sách bài viết.");
-      const data = await response.json();
-      setArticles(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        const res = await api.get<Article[]>("/article/published");
+        setArticles(res.data);
+      } catch (error) {
+        console.error("❌ Lỗi khi tải danh sách bài viết:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchArticles();
   }, []);
 
@@ -75,9 +74,12 @@ const ArticleListPage = () => {
               >
                 {article.coverUrl && (
                   <div className="relative w-full h-48">
-                    {/* Dùng Image của Next.js để tối ưu ảnh */}
                     <Image
-                      src={article.coverUrl.startsWith("http") ? article.coverUrl : `${article.coverUrl}`}
+                      src={
+                        article.coverUrl.startsWith("http")
+                          ? article.coverUrl
+                          : `${article.coverUrl}`
+                      }
                       alt={article.title}
                       fill
                       className="object-cover"

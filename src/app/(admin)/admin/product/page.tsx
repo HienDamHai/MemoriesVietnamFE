@@ -2,16 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import axios from "axios";
+import api from "@/lib/api";
 
-const API_BASE = "https://localhost:7003/api";
 
 export default function ProductManager() {
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Form states
   const [newCategory, setNewCategory] = useState("");
   const [editingCategory, setEditingCategory] = useState<any | null>(null);
 
@@ -27,24 +25,26 @@ export default function ProductManager() {
   });
   const [imageUploading, setImageUploading] = useState(false);
 
+
   // ✅ Load category + product
   useEffect(() => {
-    const loadData = async () => {
+    const load = async () => {
       try {
-        const [catRes, prodRes] = await Promise.all([
-          axios.get(`${API_BASE}/Category/active`),
-          axios.get(`${API_BASE}/Product`),
+        const [cat, prod] = await Promise.all([
+          api.get("/Category/active"),
+          api.get("/Product"),
         ]);
-        setCategories(catRes.data);
-        setProducts(prodRes.data);
+        setCategories(cat.data);
+        setProducts(prod.data);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    loadData();
+    load();
   }, []);
+
 
   // ✅ Upload ảnh Cloudinary
   const handleUploadImage = async (e: any) => {
@@ -53,18 +53,14 @@ export default function ProductManager() {
     setImageUploading(true);
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "o2kexzas"); // ⚠️ Thay bằng preset của bạn
-    formData.append("cloud_name", "dpghembhy"); // ⚠️ Thay bằng cloud_name của bạn
+    formData.append("upload_preset", "o2kexzas");
+    formData.append("cloud_name", "dpghembhy");
 
-    const res = await fetch(
-      "https://api.cloudinary.com/v1_1/dpghembhy/image/upload",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
+    const res = await fetch("https://api.cloudinary.com/v1_1/dpghembhy/image/upload", {
+      method: "POST",
+      body: formData,
+    });
     const data = await res.json();
-
     setForm((f) => ({ ...f, images: [...f.images, data.secure_url] }));
     setImageUploading(false);
   };
@@ -73,54 +69,32 @@ export default function ProductManager() {
   const handleSaveCategory = async () => {
     try {
       const payload = { name: newCategory };
-
-      console.log("📦 [DEBUG] Category payload gửi đi:", payload);
-      if (editingCategory) {
-        console.log("🟡 Cập nhật category:", editingCategory.id);
-        await axios.put(`${API_BASE}/Category/${editingCategory.id}`, payload);
-      } else {
-        console.log("🟢 Tạo category mới");
-        await axios.post(`${API_BASE}/Category`, payload);
-      }
-
+      if (editingCategory) await api.put(`/Category/${editingCategory.id}`, payload);
+      else await api.post("/Category", payload);
       setNewCategory("");
       setEditingCategory(null);
-
-      const res = await axios.get(`${API_BASE}/Category/active`);
+      const res = await api.get("/Category/active");
       setCategories(res.data);
     } catch (err) {
-      console.error("❌ Lỗi khi lưu thể loại:", err);
+      console.error(err);
       alert("Lỗi khi lưu thể loại!");
     }
   };
 
   const handleDeleteCategory = async (id: string) => {
     if (!confirm("Bạn có chắc muốn xóa thể loại này?")) return;
-    await axios.delete(`${API_BASE}/Category/${id}`);
+    await api.delete(`/Category/${id}`);
     setCategories(categories.filter((c) => c.id !== id));
   };
 
   // ✅ Tạo / Cập nhật Product
   const handleSaveProduct = async () => {
     try {
-      const payload = {
-        ...form,
-        images: form.images,
-      };
-
-      console.log("📦 [DEBUG] Product payload gửi đi:", payload);
-
-      if (form.id) {
-        console.log("🟡 Cập nhật sản phẩm:", form.id);
-        await axios.put(`${API_BASE}/Product/${form.id}`, payload);
-      } else {
-        console.log("🟢 Tạo sản phẩm mới");
-        await axios.post(`${API_BASE}/Product`, payload);
-      }
-
-      const prodRes = await axios.get(`${API_BASE}/Product`);
-      setProducts(prodRes.data);
-
+      const payload = { ...form };
+      if (form.id) await api.put(`/Product/${form.id}`, payload);
+      else await api.post("/Product", payload);
+      const res = await api.get("/Product");
+      setProducts(res.data);
       setForm({
         id: "",
         name: "",
@@ -132,14 +106,15 @@ export default function ProductManager() {
         images: [],
       });
     } catch (err) {
-      console.error("❌ Lỗi khi lưu sản phẩm:", err);
+      console.error(err);
       alert("Lỗi khi lưu sản phẩm!");
     }
   };
 
+
   const handleDeleteProduct = async (id: string) => {
     if (!confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
-    await axios.delete(`${API_BASE}/Product/${id}`);
+    await api.delete(`/Product/${id}`);
     setProducts(products.filter((p) => p.id !== id));
   };
 

@@ -29,11 +29,10 @@ export default function PodcastListPage() {
   useEffect(() => {
     const fetchPodcasts = async () => {
       try {
-        // endpoint trả về mảng podcast có episodes theo dữ liệu bạn cung cấp
-        const res = await api.get<Podcast[]>("/Podcast/with-episodes");
-        setPodcasts(Array.isArray(res.data) ? res.data : []);
+        const { data } = await api.get<Podcast[]>("/Podcast/with-episodes");
+        setPodcasts(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error("Lỗi khi tải podcast:", err);
+        console.error("Lỗi khi tải danh sách podcast:", err);
         setPodcasts([]);
       } finally {
         setLoading(false);
@@ -64,9 +63,8 @@ export default function PodcastListPage() {
                 className="block bg-white rounded-xl overflow-hidden shadow hover:shadow-lg transition"
               >
                 <div className="w-full h-48 bg-gray-100">
-                  {/* dùng img để tránh phải cấu hình next.config.js (nếu bạn đã config remotePatterns, có thể đổi sang next/Image) */}
                   <img
-                    src={p.coverUrl ?? "/img/default.jpg"}
+                    src={p.coverUrl || "/img/default.jpg"}
                     alt={p.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -75,7 +73,9 @@ export default function PodcastListPage() {
                   />
                 </div>
                 <div className="p-4">
-                  <h2 className="text-lg font-semibold text-amber-900">{p.title}</h2>
+                  <h2 className="text-lg font-semibold text-amber-900">
+                    {p.title}
+                  </h2>
                   <p className="text-sm text-gray-600 line-clamp-3 mt-2">
                     {p.description ?? ""}
                   </p>

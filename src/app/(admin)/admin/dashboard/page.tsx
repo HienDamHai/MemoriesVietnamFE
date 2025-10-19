@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import api from "@/lib/api"; // ✅ Dùng Axios có baseURL + token sẵn
 
 type OrderItem = {
   id: number;
@@ -13,7 +14,7 @@ type Order = {
   id: string;
   createdAt: string;
   total: number;
-  status: number; // dùng enum OrderStatus
+  status: number;
   orderItems: OrderItem[];
 };
 
@@ -47,60 +48,48 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
+  // ✅ Lấy danh sách đơn hàng
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    fetch("https://localhost:7003/api/Order", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then(setOrders)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    const fetchOrders = async () => {
+      try {
+        const res = await api.get("/Order");
+        setOrders(res.data);
+      } catch (err) {
+        console.error("❌ Lỗi khi tải danh sách đơn hàng:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
   }, []);
 
+  // ✅ Cập nhật trạng thái đơn hàng
   const handleUpdateStatus = async (orderId: string, currentStatus: number) => {
     let nextStatus: number | null = null;
     if (currentStatus === 1) nextStatus = 2; // Paid → Shipped
     else if (currentStatus === 2) nextStatus = 3; // Shipped → Completed
     else return;
 
-    const statusString = OrderStatus[nextStatus]; // convert number → string
-
     try {
       setUpdating(orderId);
-      const token = localStorage.getItem("token");
-      const res = await fetch(
-        `https://localhost:7003/api/Order/status/${orderId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ orderId, status: statusString }),
-        }
-      );
 
-      if (!res.ok) throw new Error("Không thể cập nhật trạng thái");
-      const updatedOrder = await res.json();
+      const res = await api.put(`/Order/status/${orderId}`, {
+        orderId,
+        status: nextStatus, // ✅ Gửi kiểu số (enum)
+      });
 
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? updatedOrder : o))
-      );
+      // Cập nhật danh sách đơn tại client
+      const updated = res.data;
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
     } catch (err) {
-      console.error(err);
-      alert("Có lỗi khi cập nhật trạng thái đơn hàng.");
+      console.error("❌ Lỗi khi cập nhật trạng thái:", err);
+      alert("Không thể cập nhật trạng thái đơn hàng!");
     } finally {
       setUpdating(null);
     }
   };
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <p className="text-lg text-gray-500 animate-pulse">
@@ -108,9 +97,8 @@ export default function AdminOrders() {
         </p>
       </div>
     );
-  }
 
-  // Lọc chỉ hiển thị Paid hoặc Shipped
+  // ✅ Lọc chỉ hiện Paid hoặc Shipped
   const filteredOrders = orders.filter((o) => o.status === 1 || o.status === 2);
 
   return (
