@@ -33,7 +33,7 @@ const ArticleListPage = () => {
   useEffect(() => {
     const fetchArticles = async () => {
       try {
-        const res = await api.get<Article[]>("/article/published");
+        const res = await api.get<Article[]>("/Article/published");
         setArticles(res.data);
       } catch (error) {
         console.error("❌ Lỗi khi tải danh sách bài viết:", error);

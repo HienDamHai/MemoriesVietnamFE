@@ -40,11 +40,11 @@ export default function HomePage() {
       try {
         setLoading(true);
         const timelineRes = await api.get<Era[]>("/era");
-        const articlesRes = await api.get<Article[]>("/article");
+        const articlesRes = await api.get<Article[]>("/Article/published");
         const podcastsRes = await api.get<
           (Podcast & { episodes: PodcastEpisode[] })[]
         >("/podcast/with-episodes");
-        const productsRes = await api.get<Product[]>("/product");
+        const productsRes = await api.get<Product[]>("/Product");
 
         setTimeline(timelineRes.data);
         setArticles(articlesRes.data);
