@@ -14,9 +14,10 @@ export default function EraListPage() {
     const fetchEras = async () => {
       try {
         const { data } = await api.get<Era[]>("/era");
+        console.log("📜 [ERA API RESPONSE]:", data);
         setEras(data);
       } catch (err) {
-        console.error("Lỗi khi tải danh sách Era:", err);
+        console.error("❌ Lỗi khi tải danh sách Era:", err);
       } finally {
         setLoading(false);
       }
@@ -26,47 +27,54 @@ export default function EraListPage() {
   }, []);
 
   if (loading)
-    return <div className="text-center py-20 text-lg">Đang tải dữ liệu...</div>;
+    return (
+      <div className="text-center py-20 text-lg text-amber-800 font-medium">
+        Đang tải dữ liệu...
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-amber-50 py-16">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100 py-16">
       <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-serif font-bold text-center mb-12">
+        {/* Tiêu đề */}
+        <h1 className="text-4xl md:text-5xl font-serif font-bold text-center text-amber-900 mb-12">
           Các thời kỳ lịch sử Việt Nam
         </h1>
 
+        {/* Nếu không có dữ liệu */}
         {eras.length === 0 ? (
-          <p className="text-center text-gray-600">Chưa có dữ liệu thời kỳ nào.</p>
+          <p className="text-center text-gray-600 text-lg">
+            Hiện chưa có dữ liệu thời kỳ nào.
+          </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {eras.map((era) => (
               <div
                 key={era.id}
-                className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"
+                className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-amber-100 hover:border-amber-300"
               >
-                <div className="h-48 overflow-hidden">
-                  <img
-                    src={"/img/default-era.jpg"}
-                    alt={era.name}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                  />
-                </div>
-                <div className="p-6">
-                  <span className="text-sm text-amber-700 font-medium">
+                {/* Thông tin thời kỳ */}
+                <div className="mb-4">
+                  <span className="inline-block text-sm text-amber-700 font-medium bg-amber-100 px-3 py-1 rounded-full">
                     {era.yearStart} – {era.yearEnd}
                   </span>
-                  <h3 className="text-2xl font-serif font-bold mt-2">{era.name}</h3>
-                  <p className="text-gray-600 mt-2 mb-4 line-clamp-3">
-                    {era.description}
-                  </p>
-                  <Link
-                    href={`/era/${era.id}`}
-                    className="text-amber-700 flex items-center font-medium hover:text-amber-500 transition-colors"
-                  >
-                    <span>Xem chi tiết</span>
-                    <ArrowRight className="ml-1 w-5 h-5" />
-                  </Link>
                 </div>
+
+                <h3 className="text-2xl font-serif font-bold text-amber-900 mb-2 group-hover:text-amber-700 transition-colors">
+                  {era.name}
+                </h3>
+
+                <p className="text-gray-700 text-base mb-6 line-clamp-3 leading-relaxed">
+                  {era.description || "Không có mô tả cho thời kỳ này."}
+                </p>
+
+                <Link
+                  href={`/era/${era.id}`}
+                  className="inline-flex items-center text-amber-700 font-medium hover:text-amber-500 transition-all"
+                >
+                  <span>Xem chi tiết</span>
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
               </div>
             ))}
           </div>
