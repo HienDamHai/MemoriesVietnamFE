@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import api from "@/lib/api";
 
 type PodcastEpisode = {
   id: string;
@@ -40,6 +39,9 @@ export default function PodcastManager() {
   });
   const [uploading, setUploading] = useState(false);
 
+  const API_BASE =
+    "https://memoirsvietnam-faa3hydzbwhbdnhe.southeastasia-01.azurewebsites.net/api";
+
   // === FETCH DATA ===
   useEffect(() => {
     fetchPodcasts();
@@ -48,8 +50,9 @@ export default function PodcastManager() {
   async function fetchPodcasts() {
     try {
       setLoading(true);
-      const res = await api.get("/Podcast/with-episodes");
-      setPodcasts(res.data);
+      const res = await fetch(`${API_BASE}/Podcast/with-episodes`);
+      const data = await res.json();
+      setPodcasts(data);
     } catch (err) {
       console.error(err);
       alert("Lỗi khi tải danh sách podcast!");
@@ -72,13 +75,9 @@ export default function PodcastManager() {
 
       const res = await fetch(
         "https://api.cloudinary.com/v1_1/dpghembhy/image/upload",
-        {
-          method: "POST",
-          body: data,
-        }
+        { method: "POST", body: data }
       );
       const result = await res.json();
-
       setForm((prev) => ({ ...prev, coverUrl: result.secure_url }));
     } catch (err) {
       console.error(err);
@@ -103,13 +102,9 @@ export default function PodcastManager() {
 
       const res = await fetch(
         "https://api.cloudinary.com/v1_1/dpghembhy/video/upload",
-        {
-          method: "POST",
-          body: data,
-        }
+        { method: "POST", body: data }
       );
       const result = await res.json();
-
       setNewEpisode((prev) => ({ ...prev, audioUrl: result.secure_url }));
     } catch (err) {
       console.error(err);
@@ -123,7 +118,13 @@ export default function PodcastManager() {
   async function createPodcast() {
     if (!form.title) return alert("Vui lòng nhập tiêu đề");
     try {
-      await api.post("/Podcast", form);
+      const res = await fetch(`${API_BASE}/Podcast`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) throw new Error("Tạo podcast thất bại");
       alert("✅ Đã tạo podcast thành công!");
       setShowForm(false);
       setForm({ title: "", description: "", coverUrl: "" });
@@ -138,7 +139,8 @@ export default function PodcastManager() {
   async function deletePodcast(id: string) {
     if (!confirm("Bạn có chắc muốn xoá podcast này không?")) return;
     try {
-      await api.delete(`/Podcast/${id}`);
+      const res = await fetch(`${API_BASE}/Podcast/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Xóa podcast thất bại");
       alert("🗑️ Đã xoá podcast!");
       fetchPodcasts();
     } catch (err) {
@@ -153,7 +155,6 @@ export default function PodcastManager() {
     if (!newEpisode.title || !newEpisode.audioUrl)
       return alert("Cần tiêu đề và audio!");
 
-    // Lấy token từ localStorage
     const token = localStorage.getItem("token");
     if (!token) return alert("Vui lòng đăng nhập!");
 
@@ -164,29 +165,34 @@ export default function PodcastManager() {
         audioUrl: newEpisode.audioUrl,
         duration: newEpisode.duration || 0,
         episodeNumber: newEpisode.episodeNumber,
-        articleId: "97d60a53-9fc7-4c65-b3fb-6413c20ed2aa", // TODO: thay bằng articleId thực nếu có
+        articleId: "97d60a53-9fc7-4c65-b3fb-6413c20ed2aa",
       };
 
-      // Gọi API kèm token trong header Authorization
-      await api.post("/PodcastEpisode", payload, {
+      const res = await fetch(`${API_BASE}/PodcastEpisode`, {
+        method: "POST",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify(payload),
       });
+
+      if (!res.ok) throw new Error("Lỗi khi thêm tập");
 
       alert("✅ Đã thêm tập mới!");
       setNewEpisode({ title: "", audioUrl: "", duration: 0, episodeNumber: 1 });
       fetchPodcasts();
 
-      // Cập nhật dữ liệu cho modal hiện tại
-      const updated = await api.get(`/Podcast/${selectedPodcast.id}`);
-      setSelectedPodcast(updated.data);
+      // cập nhật podcast hiện tại
+      const updated = await fetch(`${API_BASE}/Podcast/${selectedPodcast.id}`);
+      setSelectedPodcast(await updated.json());
     } catch (err) {
       console.error(err);
       alert("❌ Lỗi khi thêm tập!");
     }
   }
 
+  // === UI ===
   if (loading)
     return (
       <div className="text-center py-10 text-gray-600 animate-pulse">
@@ -194,6 +200,7 @@ export default function PodcastManager() {
       </div>
     );
 
+    
   return (
     <div className="p-8 text-gray-800">
       <h1 className="text-3xl font-bold mb-4 text-amber-900">
