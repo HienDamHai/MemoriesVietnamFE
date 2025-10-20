@@ -26,7 +26,11 @@ export default function PodcastManager() {
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", coverUrl: "" });
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    coverUrl: "",
+  });
   const [selectedPodcast, setSelectedPodcast] = useState<Podcast | null>(null);
   const [newEpisode, setNewEpisode] = useState({
     title: "",
@@ -66,10 +70,13 @@ export default function PodcastManager() {
       data.append("upload_preset", "o2kexzas");
       data.append("cloud_name", "dpghembhy");
 
-      const res = await fetch("https://api.cloudinary.com/v1_1/dpghembhy/image/upload", {
-        method: "POST",
-        body: data,
-      });
+      const res = await fetch(
+        "https://api.cloudinary.com/v1_1/dpghembhy/image/upload",
+        {
+          method: "POST",
+          body: data,
+        }
+      );
       const result = await res.json();
 
       setForm((prev) => ({ ...prev, coverUrl: result.secure_url }));
@@ -94,10 +101,13 @@ export default function PodcastManager() {
       data.append("cloud_name", "dpghembhy");
       data.append("resource_type", "video");
 
-      const res = await fetch("https://api.cloudinary.com/v1_1/dpghembhy/video/upload", {
-        method: "POST",
-        body: data,
-      });
+      const res = await fetch(
+        "https://api.cloudinary.com/v1_1/dpghembhy/video/upload",
+        {
+          method: "POST",
+          body: data,
+        }
+      );
       const result = await res.json();
 
       setNewEpisode((prev) => ({ ...prev, audioUrl: result.secure_url }));
@@ -142,14 +152,11 @@ export default function PodcastManager() {
     if (!selectedPodcast) return alert("Chưa chọn podcast!");
     if (!newEpisode.title || !newEpisode.audioUrl)
       return alert("Cần tiêu đề và audio!");
-  
+
     // Lấy token từ localStorage
     const token = localStorage.getItem("token");
-    if (!token) {
-      alert("⚠️ Vui lòng đăng nhập để thêm tập podcast!");
-      return;
-    }
-  
+    if (!token) return alert("Vui lòng đăng nhập!");
+
     try {
       const payload = {
         podcastId: selectedPodcast.id,
@@ -157,20 +164,20 @@ export default function PodcastManager() {
         audioUrl: newEpisode.audioUrl,
         duration: newEpisode.duration || 0,
         episodeNumber: newEpisode.episodeNumber,
-        articleId: "art4", // TODO: thay bằng articleId thực nếu có
+        articleId: "97d60a53-9fc7-4c65-b3fb-6413c20ed2aa", // TODO: thay bằng articleId thực nếu có
       };
-  
+
       // Gọi API kèm token trong header Authorization
       await api.post("/PodcastEpisode", payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       alert("✅ Đã thêm tập mới!");
       setNewEpisode({ title: "", audioUrl: "", duration: 0, episodeNumber: 1 });
       fetchPodcasts();
-  
+
       // Cập nhật dữ liệu cho modal hiện tại
       const updated = await api.get(`/Podcast/${selectedPodcast.id}`);
       setSelectedPodcast(updated.data);
@@ -179,13 +186,19 @@ export default function PodcastManager() {
       alert("❌ Lỗi khi thêm tập!");
     }
   }
-  
+
   if (loading)
-    return <div className="text-center py-10 text-gray-600 animate-pulse">Đang tải podcast...</div>;
+    return (
+      <div className="text-center py-10 text-gray-600 animate-pulse">
+        Đang tải podcast...
+      </div>
+    );
 
   return (
     <div className="p-8 text-gray-800">
-      <h1 className="text-3xl font-bold mb-4 text-amber-900">🎧 Quản lý Podcast</h1>
+      <h1 className="text-3xl font-bold mb-4 text-amber-900">
+        🎧 Quản lý Podcast
+      </h1>
 
       <button
         onClick={() => setShowForm(!showForm)}
@@ -209,10 +222,21 @@ export default function PodcastManager() {
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
-          <input type="file" accept="image/*" onChange={uploadImage} className="mb-2" />
-          {uploading && <p className="text-sm text-gray-500 mb-2">Đang upload...</p>}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={uploadImage}
+            className="mb-2"
+          />
+          {uploading && (
+            <p className="text-sm text-gray-500 mb-2">Đang upload...</p>
+          )}
           {form.coverUrl && (
-            <img src={form.coverUrl} alt="cover" className="h-32 rounded mb-2 border" />
+            <img
+              src={form.coverUrl}
+              alt="cover"
+              className="h-32 rounded mb-2 border"
+            />
           )}
           <button
             onClick={createPodcast}
@@ -226,7 +250,10 @@ export default function PodcastManager() {
       {/* === DANH SÁCH PODCAST === */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {podcasts.map((p) => (
-          <div key={p.id} className="border p-4 rounded bg-white shadow hover:shadow-md transition">
+          <div
+            key={p.id}
+            className="border p-4 rounded bg-white shadow hover:shadow-md transition"
+          >
             <div className="flex items-center gap-4">
               <img
                 src={p.coverUrl}
@@ -234,9 +261,13 @@ export default function PodcastManager() {
                 className="h-20 w-20 object-cover rounded border"
               />
               <div>
-                <h3 className="font-semibold text-lg text-amber-900">{p.title}</h3>
+                <h3 className="font-semibold text-lg text-amber-900">
+                  {p.title}
+                </h3>
                 <p className="text-sm text-gray-600">{p.description}</p>
-                <p className="text-xs text-gray-500">{p.episodes?.length || 0} tập</p>
+                <p className="text-xs text-gray-500">
+                  {p.episodes?.length || 0} tập
+                </p>
               </div>
             </div>
 
@@ -282,12 +313,16 @@ export default function PodcastManager() {
             ))}
 
             <div className="mt-4 border-t pt-4">
-              <h3 className="font-semibold mb-2 text-amber-900">➕ Thêm tập mới</h3>
+              <h3 className="font-semibold mb-2 text-amber-900">
+                ➕ Thêm tập mới
+              </h3>
               <input
                 className="border p-2 w-full mb-2 rounded"
                 placeholder="Tiêu đề"
                 value={newEpisode.title}
-                onChange={(e) => setNewEpisode({ ...newEpisode, title: e.target.value })}
+                onChange={(e) =>
+                  setNewEpisode({ ...newEpisode, title: e.target.value })
+                }
               />
               <input
                 className="border p-2 w-full mb-2 rounded"
@@ -295,13 +330,27 @@ export default function PodcastManager() {
                 placeholder="Số tập"
                 value={newEpisode.episodeNumber}
                 onChange={(e) =>
-                  setNewEpisode({ ...newEpisode, episodeNumber: parseInt(e.target.value) })
+                  setNewEpisode({
+                    ...newEpisode,
+                    episodeNumber: parseInt(e.target.value),
+                  })
                 }
               />
-              <input type="file" accept="audio/*" onChange={uploadAudio} className="mb-2" />
-              {uploading && <p className="text-sm text-gray-500 mb-2">Đang upload...</p>}
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={uploadAudio}
+                className="mb-2"
+              />
+              {uploading && (
+                <p className="text-sm text-gray-500 mb-2">Đang upload...</p>
+              )}
               {newEpisode.audioUrl && (
-                <audio controls src={newEpisode.audioUrl} className="w-full mb-2" />
+                <audio
+                  controls
+                  src={newEpisode.audioUrl}
+                  className="w-full mb-2"
+                />
               )}
               <button
                 onClick={addEpisode}
