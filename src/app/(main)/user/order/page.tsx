@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import api from "@/lib/api"; // ✅ import Axios client đã cấu hình
+import api from "@/lib/api";
 
 type OrderItem = {
   id: number;
@@ -27,20 +27,14 @@ const OrderStatus: Record<number, string> = {
 };
 
 const getStatusColor = (status: number) => {
-  switch (status) {
-    case 0:
-      return "bg-yellow-100 text-yellow-700 border-yellow-300";
-    case 1:
-      return "bg-blue-100 text-blue-700 border-blue-300";
-    case 2:
-      return "bg-purple-100 text-purple-700 border-purple-300";
-    case 3:
-      return "bg-green-100 text-green-700 border-green-300";
-    case 4:
-      return "bg-red-100 text-red-700 border-red-300";
-    default:
-      return "bg-gray-100 text-gray-700 border-gray-300";
-  }
+  const colors: Record<number, string> = {
+    0: "bg-yellow-100 text-yellow-700 border-yellow-300",
+    1: "bg-blue-100 text-blue-700 border-blue-300",
+    2: "bg-purple-100 text-purple-700 border-purple-300",
+    3: "bg-green-100 text-green-700 border-green-300",
+    4: "bg-red-100 text-red-700 border-red-300",
+  };
+  return colors[status] || "bg-gray-100 text-gray-700 border-gray-300";
 };
 
 export default function UserOrders() {
@@ -49,64 +43,40 @@ export default function UserOrders() {
   const [paying, setPaying] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    // ✅ Dùng Axios thay vì fetch
     api
       .get("/Order/me")
-      .then((res) => {
-        setOrders(res.data);
-      })
-      .catch((err) => {
-        console.error("Lỗi khi tải đơn hàng:", err);
-      })
+      .then((res) => setOrders(res.data))
+      .catch((err) => console.error("Lỗi khi tải đơn hàng:", err))
       .finally(() => setLoading(false));
   }, []);
 
   const handlePayNow = async (orderId: string) => {
     try {
       setPaying(orderId);
-      console.info("[PAY] Requesting payment url for orderId:", orderId);
-  
-      const res = await api.post(`/Payment/create?orderId=${orderId}`);
-      console.group("[PAY] /Payment/create response");
-      console.log("status:", res.status);
-      console.log("headers:", res.headers);
-      console.log("data:", res.data);
-      console.groupEnd();
-  
-      if (!res.data) throw new Error("Không nhận được phản hồi từ server");
-      const data = res.data;
-  
-      // log paymentUrl (nếu có)
-      if (data.paymentUrl) {
-        console.info("[PAY] Redirecting user to VNPAY URL", data.paymentUrl);
-        // optional: open in new tab for debugging
-        // window.open(data.paymentUrl, "_blank");
-        window.location.href = data.paymentUrl;
-      } else {
-        alert("Không tìm thấy liên kết thanh toán.");
-      }
+      console.info("[PAY] Requesting payment URL for order:", orderId);
+
+      const { data } = await api.post(`/Payment/create?orderId=${orderId}`);
+
+      if (!data?.paymentUrl) throw new Error("Không nhận được liên kết thanh toán");
+
+      console.info("[PAY] Redirecting to:", data.paymentUrl);
+      window.location.href = data.paymentUrl;
     } catch (err) {
       console.error("[PAY] Lỗi khi khởi tạo thanh toán:", err);
-      alert("Có lỗi khi khởi tạo thanh toán.");
+      alert("Có lỗi khi khởi tạo thanh toán. Vui lòng thử lại!");
     } finally {
       setPaying(null);
     }
   };
-  
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
-        <p className="text-lg text-gray-500 animate-pulse">Đang tải đơn hàng...</p>
+        <p className="text-lg text-gray-500 animate-pulse">
+          Đang tải đơn hàng...
+        </p>
       </div>
     );
-  }
 
   return (
     <div className="container mx-auto py-10 px-4">
@@ -132,11 +102,9 @@ export default function UserOrders() {
                     Mã đơn: #{order.id}
                   </p>
                   <p className="text-sm text-gray-500">
-                    Ngày đặt:{" "}
-                    {new Date(order.createdAt).toLocaleDateString("vi-VN")}
+                    Ngày đặt: {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                   </p>
                 </div>
-
                 <span
                   className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
                     order.status
@@ -146,14 +114,9 @@ export default function UserOrders() {
                 </span>
               </div>
 
-              <div className="border-t border-gray-100 my-3"></div>
-
-              <ul className="space-y-1 text-gray-700">
+              <ul className="space-y-1 text-gray-700 border-t border-gray-100 pt-3">
                 {order.orderItems?.map((item) => (
-                  <li
-                    key={item.id}
-                    className="flex justify-between items-center text-sm"
-                  >
+                  <li key={item.id} className="flex justify-between text-sm">
                     <span>
                       {item.product?.name} × {item.qty}
                     </span>
@@ -168,16 +131,14 @@ export default function UserOrders() {
                 {order.status === 0 && (
                   <button
                     onClick={() => handlePayNow(order.id)}
-                    disabled={paying === order.id}
+                    disabled={!!paying}
                     className={`px-4 py-2 rounded-lg font-semibold text-white transition ${
                       paying === order.id
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-amber-600 hover:bg-amber-700"
                     }`}
                   >
-                    {paying === order.id
-                      ? "Đang khởi tạo..."
-                      : "💳 Thanh toán ngay"}
+                    {paying === order.id ? "Đang khởi tạo..." : "💳 Thanh toán ngay"}
                   </button>
                 )}
                 <p className="text-lg font-bold text-amber-800">
