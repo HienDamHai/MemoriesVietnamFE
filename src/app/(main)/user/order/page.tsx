@@ -70,23 +70,35 @@ export default function UserOrders() {
   const handlePayNow = async (orderId: string) => {
     try {
       setPaying(orderId);
+      console.info("[PAY] Requesting payment url for orderId:", orderId);
+  
       const res = await api.post(`/Payment/create?orderId=${orderId}`);
-
+      console.group("[PAY] /Payment/create response");
+      console.log("status:", res.status);
+      console.log("headers:", res.headers);
+      console.log("data:", res.data);
+      console.groupEnd();
+  
       if (!res.data) throw new Error("Không nhận được phản hồi từ server");
       const data = res.data;
-
+  
+      // log paymentUrl (nếu có)
       if (data.paymentUrl) {
-        window.location.href = data.paymentUrl; // ✅ redirect sang cổng thanh toán
+        console.info("[PAY] Redirecting user to VNPAY URL", data.paymentUrl);
+        // optional: open in new tab for debugging
+        // window.open(data.paymentUrl, "_blank");
+        window.location.href = data.paymentUrl;
       } else {
         alert("Không tìm thấy liên kết thanh toán.");
       }
     } catch (err) {
-      console.error("Lỗi khi khởi tạo thanh toán:", err);
+      console.error("[PAY] Lỗi khi khởi tạo thanh toán:", err);
       alert("Có lỗi khi khởi tạo thanh toán.");
     } finally {
       setPaying(null);
     }
   };
+  
 
   if (loading) {
     return (
