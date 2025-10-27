@@ -103,7 +103,9 @@ export default function PodcastDetailPage() {
     );
   }
 
-  const episodes = Array.isArray(podcast.episodes) ? podcast.episodes : [];
+  const episodes = Array.isArray(podcast.episodes)
+  ? [...podcast.episodes].sort((a, b) => a.episodeNumber - b.episodeNumber)
+  : [];
 
   return (
     <div className="min-h-screen bg-amber-50 py-16">
