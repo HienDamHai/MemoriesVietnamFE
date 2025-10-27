@@ -177,9 +177,9 @@ export default function PodcastDetailPage() {
           <div className="w-80">
             {audioSrc?.includes("player.cloudinary.com") ? (
               <iframe
-                src={audioSrc}
+                src={`${audioSrc}&hide_context=true&hide_title=true&hide_transcript=true&hide_cover=true&ui_theme=minimal`}
                 allow="autoplay"
-                className="w-full h-24 border-0 rounded-md"
+                className="w-full h-16 border-0 rounded-md overflow-hidden"
               ></iframe>
             ) : (
               <audio
