@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import ROUTES from "../../router/routes";
@@ -27,6 +28,7 @@ export default function HomePage() {
   >([]);
   const [products, setProducts] = useState<ProductMapped[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -202,9 +204,7 @@ export default function HomePage() {
                     <h3 className="font-serif text-2xl font-bold">
                       {podcasts[0].title}
                     </h3>
-                    <p className="text-amber-300">
-                      {podcasts[0].description}
-                    </p>
+                    <p className="text-amber-300">{podcasts[0].description}</p>
                   </div>
                 </div>
 
@@ -214,7 +214,10 @@ export default function HomePage() {
                       {podcasts[0].episodes[0].title}
                     </h4>
                     <div className="flex items-center justify-between">
-                      <button className="bg-amber-500 hover:bg-amber-400 rounded-full w-12 h-12 flex items-center justify-center transition-colors">
+                      <button
+                        onClick={() => router.push(ROUTES.PODCAST)}
+                        className="bg-amber-500 hover:bg-amber-400 rounded-full w-12 h-12 flex items-center justify-center transition-colors"
+                      >
                         <Play className="w-6 h-6 text-white" />
                       </button>
                       <span className="text-amber-300 text-sm">
@@ -228,7 +231,10 @@ export default function HomePage() {
                 )}
 
                 <div className="flex justify-between">
-                  <button className="flex items-center text-amber-300 hover:text-amber-200 transition-colors">
+                  <button
+                    onClick={() => router.push(ROUTES.PODCAST)}
+                    className="flex items-center text-amber-300 hover:text-amber-200 transition-colors"
+                  >
                     <ListMusic className="w-5 h-5 mr-1" />
                     <span>Xem tất cả tập</span>
                   </button>
@@ -259,7 +265,10 @@ export default function HomePage() {
                           {(ep.duration % 60).toString().padStart(2, "0")}
                         </span>
                       </div>
-                      <button className="bg-amber-500 hover:bg-amber-400 rounded-full w-10 h-10 flex items-center justify-center transition-colors">
+                      <button
+                        onClick={() => router.push(ROUTES.PODCAST)}
+                        className="bg-amber-500 hover:bg-amber-400 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
+                      >
                         <Play className="w-5 h-5 text-white" />
                       </button>
                     </div>
@@ -299,7 +308,10 @@ export default function HomePage() {
                     <span className="font-bold text-amber-700">
                       {product.priceFormatted}
                     </span>
-                    <button className="bg-amber-600 hover:bg-amber-500 text-white p-2 rounded-full transition-colors">
+                    <button
+                      onClick={() => router.push(ROUTES.SHOP)}
+                      className="bg-amber-600 hover:bg-amber-500 text-white p-2 rounded-full transition-colors"
+                    >
                       <ShoppingCart className="w-5 h-5" />
                     </button>
                   </div>
