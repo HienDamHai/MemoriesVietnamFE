@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import api from "@/lib/api"; // ✅ import axios instance của bạn
+import api from "@/lib/api"; // Axios instance
 
 export default function PaymentSuccessPage() {
   return (
@@ -20,16 +20,13 @@ function PaymentSuccessContent() {
     const fetchPaymentResult = async () => {
       try {
         const query = params.toString();
-        // ✅ Gọi API qua Axios instance
         const res = await api.get(`/Payment/vnpay-return?${query}`);
         setResult(res.data);
       } catch (error: any) {
-        console.error("❌ Lỗi khi gọi API VNPay:", error);
+        console.error("❌ Lỗi khi gọi API VNPAY:", error);
         setResult({
           Success: false,
-          Message:
-            error.response?.data?.Message ||
-            "Đã xảy ra lỗi khi xử lý thanh toán.",
+          Message: error.response?.data?.Message || "Đã xảy ra lỗi khi xử lý thanh toán.",
         });
       }
     };
@@ -37,8 +34,7 @@ function PaymentSuccessContent() {
     if (params.toString()) fetchPaymentResult();
   }, [params]);
 
-  if (!result)
-    return <p className="text-center py-20">⏳ Đang xử lý thanh toán...</p>;
+  if (!result) return <p className="text-center py-20">⏳ Đang xử lý thanh toán...</p>;
 
   return (
     <div className="text-center py-20">
