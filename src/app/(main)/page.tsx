@@ -47,7 +47,7 @@ export default function HomePage() {
         const mappedArticles: Article[] = articlesRes.data.map((a) => ({
           ...a,
           image: a.coverUrl || "/img/default.jpg",
-        }));
+        })).slice(0,3);
 
         // 🎧 Podcast
         const mappedPodcasts: (Podcast & { episodes: PodcastEpisode[] })[] =
@@ -57,7 +57,7 @@ export default function HomePage() {
               .filter((ep) => !ep.isDeleted)
               .sort((a, b) => a.episodeNumber - b.episodeNumber)
               .slice(0, 3),
-          }));
+          })).slice(0,2);
 
         // 🛍️ Product
         const mappedProducts: ProductMapped[] = productsRes.data.map((p) => {
@@ -78,7 +78,7 @@ export default function HomePage() {
               currency: "VND",
             }),
           };
-        });
+        }).slice(0,3);
 
         setArticles(mappedArticles);
         setPodcasts(mappedPodcasts);
