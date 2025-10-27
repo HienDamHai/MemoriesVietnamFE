@@ -19,11 +19,11 @@ export const Footer = () => {
         <div>
           <h4 className="font-bold mb-1">Kết nối với chúng tôi</h4>
           <div className="flex space-x-4">
-            <a href="#" className="hover:text-amber-200">
+            <a href="https://www.facebook.com/sweetalv/" className="hover:text-amber-200">
               Facebook
             </a>
-            <a href="#" className="hover:text-amber-200">
-              Mail
+            <a href="https://www.tiktok.com/@khoinguondatviet?" className="hover:text-amber-200">
+              TikTok
             </a>
           </div>
         </div>
