@@ -66,15 +66,15 @@ export default function PodcastDetailPage() {
     setTimeout(() => {
       if (audioRef.current) {
         audioRef.current.load();
-        audioRef.current
-          .play()
-          .catch(() => console.log("Autoplay bị chặn."));
+        audioRef.current.play().catch(() => console.log("Autoplay bị chặn!"));
       }
     }, 50);
   };
 
   if (loading) {
-    return <div className="py-20 text-center">Đang tải chi tiết podcast...</div>;
+    return (
+      <div className="py-20 text-center">Đang tải chi tiết podcast...</div>
+    );
   }
 
   if (!podcast) {
@@ -175,9 +175,22 @@ export default function PodcastDetailPage() {
           </div>
 
           <div className="w-80">
-            <audio ref={audioRef} controls src={audioSrc ?? undefined} className="w-full">
-              Trình duyệt của bạn không hỗ trợ thẻ audio.
-            </audio>
+            {audioSrc?.includes("player.cloudinary.com") ? (
+              <iframe
+                src={audioSrc}
+                allow="autoplay"
+                className="w-full h-24 border-0 rounded-md"
+              ></iframe>
+            ) : (
+              <audio
+                ref={audioRef}
+                controls
+                src={audioSrc ?? undefined}
+                className="w-full"
+              >
+                Trình duyệt của bạn không hỗ trợ thẻ audio.
+              </audio>
+            )}
           </div>
         </div>
       </div>
