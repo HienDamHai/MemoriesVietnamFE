@@ -60,7 +60,19 @@ export default function PodcastDetailPage() {
   };
 
   const handlePlayEpisode = (ep: Episode) => {
-    const src = buildAudioUrl(ep.audioUrl);
+    let src = buildAudioUrl(ep.audioUrl);
+
+    // Nếu là link Cloudinary embed => chuyển sang link file .mp3 trực tiếp
+    if (src?.includes("player.cloudinary.com")) {
+      const match = src.match(/public_id=([^&]+)/);
+      const cloud = src.match(/cloud_name=([^&]+)/);
+      if (match && cloud) {
+        const publicId = match[1];
+        const cloudName = cloud[1];
+        src = `https://res.cloudinary.com/${cloudName}/video/upload/${publicId}.mp3`;
+      }
+    }
+
     setCurrentEpisode(ep);
     setAudioSrc(src);
     setTimeout(() => {
@@ -175,22 +187,14 @@ export default function PodcastDetailPage() {
           </div>
 
           <div className="w-80">
-            {audioSrc?.includes("player.cloudinary.com") ? (
-              <iframe
-                src={`${audioSrc}&hide_context=true&hide_title=true&hide_transcript=true&hide_cover=true&ui_theme=minimal`}
-                allow="autoplay"
-                className="w-full h-16 border-0 rounded-md overflow-hidden"
-              ></iframe>
-            ) : (
-              <audio
-                ref={audioRef}
-                controls
-                src={audioSrc ?? undefined}
-                className="w-full"
-              >
-                Trình duyệt của bạn không hỗ trợ thẻ audio.
-              </audio>
-            )}
+            <audio
+              ref={audioRef}
+              controls
+              src={audioSrc ?? undefined}
+              className="w-full h-10"
+            >
+              Trình duyệt của bạn không hỗ trợ thẻ audio.
+            </audio>
           </div>
         </div>
       </div>
