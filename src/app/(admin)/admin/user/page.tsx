@@ -58,11 +58,24 @@ export default function ManageUsers() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
+  // 🔹 Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
+  const totalPages = Math.ceil(users.length / pageSize);
+  const paginatedUsers = users.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   // 🔹 Lấy tất cả user
   useEffect(() => {
     api
       .get("/Users")
-      .then((res) => setUsers(res.data))
+      .then((res) => {
+        setUsers(res.data);
+        setCurrentPage(1); // reset về page 1 khi load
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -74,7 +87,14 @@ export default function ManageUsers() {
     try {
       await api.delete(`/Users/${id}`);
       alert("Đã xoá người dùng.");
-      setUsers((prev) => prev.filter((u) => u.id !== id));
+
+      setUsers((prev) => {
+        const updated = prev.filter((u) => u.id !== id);
+        if ((currentPage - 1) * pageSize >= updated.length) {
+          setCurrentPage((p) => Math.max(1, p - 1));
+        }
+        return updated;
+      });
     } catch (err) {
       console.error(err);
       alert("Có lỗi khi xoá người dùng.");
@@ -120,7 +140,7 @@ export default function ManageUsers() {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
+            {paginatedUsers.map((user) => (
               <tr
                 key={user.id}
                 className="hover:bg-amber-50 transition-colors border-b"
@@ -130,7 +150,9 @@ export default function ManageUsers() {
                 <td className="p-3">{user.address || "—"}</td>
                 <td className="p-3">
                   {user.verifiedAt ? (
-                    <span className="text-green-600 font-semibold">Đã xác thực</span>
+                    <span className="text-green-600 font-semibold">
+                      Đã xác thực
+                    </span>
                   ) : (
                     <span className="text-gray-500 italic">Đang hoạt động</span>
                   )}
@@ -151,8 +173,44 @@ export default function ManageUsers() {
                 </td>
               </tr>
             ))}
+
+            {paginatedUsers.length === 0 && (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="text-center p-4 text-gray-500 italic"
+                >
+                  Không có người dùng.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
+      </div>
+
+      {/* PHÂN TRANG */}
+      <div className="flex justify-between items-center mt-4">
+        <p className="text-sm text-gray-600">
+          Trang {currentPage} / {totalPages || 1}
+        </p>
+
+        <div className="space-x-2">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+            className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+          >
+            ← Trước
+          </button>
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+            className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Sau →
+          </button>
+        </div>
       </div>
 
       {/* Modal hiển thị đơn hàng */}
@@ -173,7 +231,9 @@ export default function ManageUsers() {
             {loadingOrders ? (
               <p className="text-gray-500 animate-pulse">Đang tải đơn hàng...</p>
             ) : orders.length === 0 ? (
-              <p className="text-gray-600">Người dùng này chưa có đơn hàng nào.</p>
+              <p className="text-gray-600">
+                Người dùng này chưa có đơn hàng nào.
+              </p>
             ) : (
               <div className="space-y-4">
                 {orders.map((order) => (
@@ -186,7 +246,9 @@ export default function ManageUsers() {
                         <p className="font-semibold">Mã đơn: #{order.id}</p>
                         <p className="text-sm text-gray-500">
                           Ngày đặt:{" "}
-                          {new Date(order.createdAt).toLocaleDateString("vi-VN")}
+                          {new Date(order.createdAt).toLocaleDateString(
+                            "vi-VN"
+                          )}
                         </p>
                       </div>
                       <span
