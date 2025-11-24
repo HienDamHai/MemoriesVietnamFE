@@ -68,19 +68,19 @@ export default function ManageUsers() {
     currentPage * pageSize
   );
 
-  // 🔹 Lấy tất cả user
+  // 🔹 Load Users
   useEffect(() => {
     api
       .get("/Users")
       .then((res) => {
         setUsers(res.data);
-        setCurrentPage(1); // reset về page 1 khi load
+        setCurrentPage(1);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
-  // 🔹 Xoá user
+  // 🔹 Delete User
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc muốn xoá người dùng này không?")) return;
 
@@ -90,6 +90,7 @@ export default function ManageUsers() {
 
       setUsers((prev) => {
         const updated = prev.filter((u) => u.id !== id);
+
         if ((currentPage - 1) * pageSize >= updated.length) {
           setCurrentPage((p) => Math.max(1, p - 1));
         }
@@ -101,7 +102,7 @@ export default function ManageUsers() {
     }
   };
 
-  // 🔹 Xem đơn hàng của user
+  // 🔹 View Orders
   const handleViewOrders = async (user: User) => {
     setSelectedUser(user);
     setLoadingOrders(true);
@@ -127,7 +128,7 @@ export default function ManageUsers() {
     <div className="p-8 text-amber-900">
       <h1 className="text-3xl font-bold mb-6">👥 Quản lý người dùng</h1>
 
-      {/* Bảng danh sách user */}
+      {/* Bảng người dùng */}
       <div className="overflow-x-auto rounded-lg shadow-md border border-amber-200 bg-white">
         <table className="min-w-full border-collapse">
           <thead className="bg-amber-100 text-left">
@@ -176,10 +177,7 @@ export default function ManageUsers() {
 
             {paginatedUsers.length === 0 && (
               <tr>
-                <td
-                  colSpan={5}
-                  className="text-center p-4 text-gray-500 italic"
-                >
+                <td colSpan={5} className="text-center p-4 text-gray-500 italic">
                   Không có người dùng.
                 </td>
               </tr>
@@ -188,24 +186,66 @@ export default function ManageUsers() {
         </table>
       </div>
 
-      {/* PHÂN TRANG */}
-      <div className="flex justify-between items-center mt-4">
+      {/* PHÂN TRANG NÂNG CAO */}
+      <div className="flex flex-col md:flex-row justify-between items-center mt-4 gap-3">
         <p className="text-sm text-gray-600">
-          Trang {currentPage} / {totalPages || 1}
+          Trang {currentPage} / {totalPages || 1} — Tổng {users.length} người dùng
         </p>
 
-        <div className="space-x-2">
+        <div className="flex items-center gap-2">
+          {/* Prev */}
           <button
             disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
+            onClick={() => {
+              setCurrentPage((p) => p - 1);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
             className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
           >
             ← Trước
           </button>
 
+          {/* Page numbers */}
+          {[...Array(totalPages)].map((_, i) => {
+            const p = i + 1;
+
+            if (p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1) {
+              return (
+                <button
+                  key={p}
+                  onClick={() => {
+                    setCurrentPage(p);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className={`px-3 py-1 border rounded ${
+                    p === currentPage
+                      ? "bg-amber-700 text-white border-amber-700"
+                      : "bg-gray-100"
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            }
+
+            if (p === currentPage - 2 || p === currentPage + 2) {
+              return (
+                <span key={p} className="px-2 text-gray-500">
+                  …
+                </span>
+              );
+            }
+
+            return null;
+          })}
+
+          {/* Next */}
           <button
             disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
+            onClick={() => {
+              setCurrentPage((p) => p + 1);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
             className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
           >
             Sau →
@@ -213,7 +253,7 @@ export default function ManageUsers() {
         </div>
       </div>
 
-      {/* Modal hiển thị đơn hàng */}
+      {/* Orders Modal */}
       {selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white text-amber-900 rounded-xl shadow-lg w-full max-w-3xl max-h-[80vh] overflow-y-auto p-6 relative">
@@ -231,9 +271,7 @@ export default function ManageUsers() {
             {loadingOrders ? (
               <p className="text-gray-500 animate-pulse">Đang tải đơn hàng...</p>
             ) : orders.length === 0 ? (
-              <p className="text-gray-600">
-                Người dùng này chưa có đơn hàng nào.
-              </p>
+              <p className="text-gray-600">Người dùng này chưa có đơn hàng nào.</p>
             ) : (
               <div className="space-y-4">
                 {orders.map((order) => (
@@ -246,9 +284,7 @@ export default function ManageUsers() {
                         <p className="font-semibold">Mã đơn: #{order.id}</p>
                         <p className="text-sm text-gray-500">
                           Ngày đặt:{" "}
-                          {new Date(order.createdAt).toLocaleDateString(
-                            "vi-VN"
-                          )}
+                          {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                         </p>
                       </div>
                       <span
