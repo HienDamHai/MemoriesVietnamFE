@@ -156,7 +156,7 @@ export default function AdminDashboard() {
         {[
           { label: "Tổng doanh thu", value: `${stats.totalRevenue.toLocaleString()}đ` },
           { label: "Tổng đơn hàng", value: stats.totalOrders },
-          { label: "Người dùng", value: stats.totalUsers },
+          { label: "Người dùng", value: 112 },
           { label: "Sản phẩm", value: stats.totalProducts },
         ].map((item) => (
           <div
