@@ -114,7 +114,6 @@ export default function ManageUsers() {
             <tr>
               <th className="p-3 border-b">Tên</th>
               <th className="p-3 border-b">Email</th>
-              <th className="p-3 border-b">SĐT</th>
               <th className="p-3 border-b">Địa chỉ</th>
               <th className="p-3 border-b">Xác thực</th>
               <th className="p-3 border-b text-right">Hành động</th>
@@ -128,13 +127,12 @@ export default function ManageUsers() {
               >
                 <td className="p-3">{user.name || "Chưa có tên"}</td>
                 <td className="p-3">{user.email}</td>
-                <td className="p-3">{user.phone || "—"}</td>
                 <td className="p-3">{user.address || "—"}</td>
                 <td className="p-3">
                   {user.verifiedAt ? (
                     <span className="text-green-600 font-semibold">Đã xác thực</span>
                   ) : (
-                    <span className="text-gray-500 italic">Chưa xác thực</span>
+                    <span className="text-gray-500 italic">Đang hoạt động</span>
                   )}
                 </td>
                 <td className="p-3 text-right space-x-2">
