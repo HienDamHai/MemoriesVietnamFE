@@ -53,17 +53,18 @@ export default function UserOrders() {
   const handlePayNow = async (orderId: string) => {
     try {
       setPaying(orderId);
-      console.info("[PAY] Requesting payment URL for order:", orderId);
 
-      const { data } = await api.post(`/Payment/create?orderId=${orderId}`);
+      const payload = {
+        orderId,
+        status: "Completed",
+      };
 
-      if (!data?.paymentUrl) throw new Error("Không nhận được liên kết thanh toán");
+      await api.put(`/Order/status/${orderId}`, payload);
 
-      console.info("[PAY] Redirecting to:", data.paymentUrl);
-      window.location.href = data.paymentUrl;
+      window.location.href = "/payment-qr?orderId=" + orderId;
     } catch (err) {
-      console.error("[PAY] Lỗi khi khởi tạo thanh toán:", err);
-      alert("Có lỗi khi khởi tạo thanh toán. Vui lòng thử lại!");
+      console.error("[PAY] Lỗi khi cập nhật trạng thái đơn:", err);
+      alert("Không thể cập nhật thanh toán. Vui lòng thử lại!");
     } finally {
       setPaying(null);
     }
@@ -72,9 +73,7 @@ export default function UserOrders() {
   if (loading)
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
-        <p className="text-lg text-gray-500 animate-pulse">
-          Đang tải đơn hàng...
-        </p>
+        <p className="text-lg text-gray-500 animate-pulse">Đang tải đơn hàng...</p>
       </div>
     );
 
@@ -85,9 +84,6 @@ export default function UserOrders() {
       {orders.length === 0 ? (
         <div className="text-center bg-amber-50 border border-amber-200 p-8 rounded-lg text-amber-900 shadow-sm">
           <p className="text-lg">Chưa có đơn hàng nào.</p>
-          <p className="text-sm text-amber-700 mt-1">
-            Hãy ghé cửa hàng để đặt đơn đầu tiên!
-          </p>
         </div>
       ) : (
         <div className="grid gap-6">
@@ -105,6 +101,7 @@ export default function UserOrders() {
                     Ngày đặt: {new Date(order.createdAt).toLocaleDateString("vi-VN")}
                   </p>
                 </div>
+
                 <span
                   className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
                     order.status
@@ -138,9 +135,10 @@ export default function UserOrders() {
                         : "bg-amber-600 hover:bg-amber-700"
                     }`}
                   >
-                    {paying === order.id ? "Đang khởi tạo..." : "💳 Thanh toán ngay"}
+                    {paying === order.id ? "Đang xử lý..." : "💳 Thanh toán ngay"}
                   </button>
                 )}
+
                 <p className="text-lg font-bold text-amber-800">
                   Tổng: {order.total.toLocaleString()}đ
                 </p>
