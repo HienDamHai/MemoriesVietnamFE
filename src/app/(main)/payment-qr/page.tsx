@@ -11,7 +11,7 @@ export default function PaymentQR() {
         <img
           src="/img/image.jpg"
           alt="QR thanh toán"
-          className="w-72 h-72 object-contain"
+          className="w-100 h-100 object-contain"
         />
       </div>
 
