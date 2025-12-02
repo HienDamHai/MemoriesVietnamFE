@@ -9,7 +9,7 @@ export default function PaymentQR() {
 
       <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
         <img
-          src="/public/img/image.png"
+          src="/../public/img/image.png"
           alt="QR thanh toán"
           className="w-72 h-72 object-contain"
         />
