@@ -10,6 +10,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
 
   useEffect(() => {
+    // 🔧 MOCK MODE — bypass auth check for screenshots
+    const MOCK_ENABLED = true;
+    if (MOCK_ENABLED) {
+      setIsAuthorized(true);
+      return;
+    }
+
     const token = localStorage.getItem("token");
     if (!token) {
       router.push(ROUTES.LOGIN);
